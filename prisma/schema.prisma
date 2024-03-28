@@ -1,0 +1,295 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  email          String           @unique
+  profileImage   String?
+  isAdmin        Boolean?         @default(false)
+  isSuperAdmin   Boolean?         @default(false)
+  isPremium      Boolean?         @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  PremiumMember  PremiumMember?
+  Comments       Comments[]
+  kiitsocial     kiitsocial[]
+  totalEarned    Int?             @default(0)
+  VerifySolution VerifySolution[]
+  Review         Review[] 
+
+}
+
+model PremiumMember {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  whatsappNumber    String
+  branch            String
+  year              String
+  message           String?
+  paymentScreenshot String?
+  isActive          Boolean? @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id])
+  userId            String   @unique @db.ObjectId
+}
+
+// schema.prisma 
+
+model Review {
+  id            String  @id @default(auto()) @map("_id") @db.ObjectId
+  rating        Float
+  userId   String @db.ObjectId @unique
+  user          User   @relation(fields: [userId], references: [id])
+  internalScore Int
+  comments      String
+  facultyId     String  @db.ObjectId
+  faculty       FacultiesDetails @relation(fields: [facultyId], references: [id])
+}
+
+// model Teacher {
+//   id       String   @id @default(auto()) @map("_id") @db.ObjectId
+//   name     String
+//   section  Int[]
+//   subject  String
+//   likes    String[]
+//   dislikes String[]
+//   reviews  Review[]
+// }
+
+model ElectiveReview {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  rating        Float
+  commentedBy   String
+  internalScore Int
+  comments      String
+  teacherId     String   @db.ObjectId
+  teacher       Elective @relation(fields: [teacherId], references: [id])
+}
+
+model Elective {
+  id       String           @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  subject  String
+  section  Int[]
+  likes    String[]
+  dislikes String[]
+  reviews  ElectiveReview[]
+}
+
+model GroupLinks {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  link      String
+  createdBy String
+}
+
+model Polling {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  respondedUsersList String[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  sections           Section[]
+}
+
+model Section {
+  id            String  @id @default(auto()) @map("_id") @db.ObjectId
+  sectionNumber Int
+  votes         Int     @default(0)
+  pollid        String  @db.ObjectId
+  poll          Polling @relation(fields: [pollid], references: [id])
+}
+
+model ProfessorContacts {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FacultiesDetails {
+  id                String             @id @default(auto()) @map("_id") @db.ObjectId
+  name              String
+  phone             String?
+  email             String?
+  description       String?
+  jobTitle          String?
+  moreInfo          String?
+  profileUrl        String?
+
+  likesId           String[] @db.ObjectId
+  dislikesId        String[] @db.ObjectId
+// likesId String[] 
+
+  semesterSectionId String[]           @db.ObjectId
+  semesterSection   SemesterSections[] @relation(fields: [semesterSectionId], references: [id])
+  subjectId String[]  @db.ObjectId
+  subject   Subject[] @relation(fields: [subjectId], references: [id])
+  reviews   Review[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Comments {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  comment String
+
+  isAnonymous  Boolean    @default(true)
+  userId       String     @unique @db.ObjectId
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  kiitsocialId String     @db.ObjectId
+  kiitsocial   kiitsocial @relation(fields: [kiitsocialId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id])
+}
+
+model kiitsocial {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String?
+  description String
+  tags        String[]
+  image       String?
+  eventType   String?
+  isApproved  Boolean? @default(false)
+  userId      String   @unique @db.ObjectId
+  lostPlace   String?
+  foundPlace  String?
+  lostDate    String?
+  foundDate   String?
+  githubLink  String?
+  projectLink String?
+
+  isAnonymous Boolean  @default(true)
+  likes       String[]
+
+  comments  Comments[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id])
+}
+
+//  {
+//             "mimeType": "application/pdf",
+//             "year": "2015",
+//             "type": "Mid Semester",
+//             "name": "Mid Sem Exam",
+//             "id": "1xROCx4n462LWPiZY8NredaYB7sSmtanD",
+//             "solution": null
+//
+
+type Note {
+  id             String  @default(uuid()) // Unique identifier for notes
+  name           String
+  mimeType       String? @default("application/pdf")
+  isDownloadable Boolean @default(false)
+  status         String? @default("VERIFIED")
+  Notes          String
+}
+
+type PYQS {
+  id                 String  @default(uuid()) // Unique identifier for PYQS
+  name               String
+  year               String
+  type               String
+  status             String?
+  solutionUploadedBy String? @db.ObjectId
+  QuestionUploadedBy String? @db.ObjectId
+  mimeType           String?
+  Question           String?
+  solution           String?
+}
+
+model Subject {
+  id            String             @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  SUBCODE       String?
+  Credit        String?
+  description   String?
+  folderId      String?
+  notes         Note[]
+  pyqs          PYQS[]
+  semesterId    String[]           @db.ObjectId
+  semester      Semester[]         @relation(fields: [semesterId], references: [id])
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  verfySolution VerifySolution[]
+  faculty       FacultiesDetails[] @relation(fields: [facultyId], references: [id])
+  facultyId     String[]           @db.ObjectId
+}
+
+model Branch {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  name      String     @unique
+  semesters Semester[]
+}
+
+type PYQSVerify {
+  id       String // Unique identifier for PYQS
+  name     String
+  year     String
+  type     String
+  Question String?
+}
+
+model VerifySolution {
+  id             String     @id @default(auto()) @map("_id") @db.ObjectId
+  solution       String
+  status         String     @default("REVIEW")
+  maxAttempts    Int?       @default(2)
+  upiId          String
+  pyqs           PYQSVerify
+  paymentStatus  String?    @default("PENDING")
+  rejectedReason String?
+  userId         String     @db.ObjectId
+  user           User       @relation(fields: [userId], references: [id])
+  subjectId      String     @db.ObjectId
+  subject        Subject    @relation(fields: [subjectId], references: [id])
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+// model Faculties{
+//   id        String    @id @default(auto()) @map("_id") @db.ObjectId
+//   name      String
+//   phone     String?
+//   email     String?
+//   description String?
+//   jobTitle  String?
+//   moreInfo  String?
+//   profileUrl String?
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+// }
+model Semester {
+  id                String             @id @default(auto()) @map("_id") @db.ObjectId
+  number            Int
+  subjectId         String[]           @db.ObjectId
+  subjects          Subject[]          @relation(fields: [subjectId], references: [id])
+  branch            Branch             @relation(fields: [branchId], references: [id])
+  branchId          String             @unique @db.ObjectId
+  semesterSectionId String[]           @db.ObjectId
+  semesterSections  SemesterSections[]
+}
+
+model SemesterSections {
+  id         String             @id @default(auto()) @map("_id") @db.ObjectId
+  section    Int
+  semesterId String             @db.ObjectId
+  semester   Semester           @relation(fields: [semesterId], references: [id])
+  facultyId  String[]           @db.ObjectId
+  faculty    FacultiesDetails[] @relation(fields: [facultyId], references: [id])
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+}
